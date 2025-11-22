@@ -1,12 +1,27 @@
 ﻿<Project>
   <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks Condition=" '$(NoTarget)' != 'true' ">
+      net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;
+      netcoreapp3.1;netcoreapp3.0;
+      net48;net472;net471;net47;net462;net461;
+      netstandard2.0;netstandard2.1
+    </TargetFrameworks>
+    <TargetFramework Condition=" '$(NoTarget)' == 'true' ">netstandard2.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
     <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
-  
+    
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ReadMe.md" Pack="true" />
+    <None Include="$(MSBuildThisFileDirectory)ReadMe.md" Pack="true" PackagePath="ReadMe.md" />
   </ItemGroup>
 
+  <ItemGroup Condition=" '$(NoTarget)' == 'true' ">
+    <Compile Include="$(MSBuildProjectDirectory)\*.cs" Pack="true" PackagePath="contentFiles\cs\netstandard2.0\$(PackageId)\" />
+  </ItemGroup>
+  
 </Project>

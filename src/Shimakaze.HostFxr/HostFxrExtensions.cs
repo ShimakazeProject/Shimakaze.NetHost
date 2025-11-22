@@ -1,10 +1,11 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Shimakaze;
 
 internal static class HostFxrExtensions
 {
-    extension (HostFxr hostfxr)
+    extension(HostFxr hostfxr)
     {
         public unsafe int Initialize(string[] args, in InitializeParameters? parameters, out HostContext context)
         {
@@ -56,3 +57,12 @@ internal static class HostFxrExtensions
         }
     }
 }
+
+#if !NET7_0_OR_GREATER
+file static class NativeMemory
+{
+    public static unsafe void Free(void* ptr) => Marshal.FreeHGlobal((nint)ptr);
+    public static unsafe void* Alloc(nuint elementCount, nuint elementSize) => (void*)Marshal.AllocHGlobal(unchecked((int)(elementCount * elementSize)));
+    public static unsafe void Copy(void* source, void* destination, nuint byteCount) => Buffer.MemoryCopy(source, destination, byteCount, byteCount);
+}
+#endif

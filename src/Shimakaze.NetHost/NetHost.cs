@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Shimakaze;
 
-public static partial class NetHost
+internal static partial class NetHost
 {
     /// <summary>
     /// Get the path to the hostfxr library
@@ -31,8 +31,20 @@ public static partial class NetHost
     /// The full search for the hostfxr library is done on every call. To minimize the need
     /// to call this function multiple times, pass a large buffer (e.g. PATH_MAX).
     /// </remarks>
+#if !NET7_0_OR_GREATER
+    private static unsafe int GetHostFxrPath(Span<byte> buffer, ref nint buffer_size, nint parameters)
+    {
+        fixed (nint* buffer_size_native = &buffer_size)
+        fixed (byte* buffer_native = buffer)
+            return __PInvoke(buffer_native, buffer_size_native, parameters);
+
+        [DllImport("nethost", EntryPoint = "get_hostfxr_path", ExactSpelling = true)]
+        static extern unsafe int __PInvoke(byte* buffer_native, nint* buffer_size_native, nint parameters_native);
+    }
+#else
     [LibraryImport("nethost", EntryPoint = "get_hostfxr_path")]
     private static partial int GetHostFxrPath(Span<byte> buffer, ref nint buffer_size, nint parameters);
+#endif
 
     public static string GetHostFxrPath()
     {
@@ -42,20 +54,31 @@ public static partial class NetHost
 
         nint byteSize = buffer_size;
         Encoding encoding = Encoding.UTF8;
-        if (OperatingSystem.IsWindows())
+#if !NETFRAMEWORK
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+#endif
         {
             byteSize *= 2;
             encoding = Encoding.Unicode;
         }
 
-        Span<byte> buffer = GC.AllocateUninitializedArray<byte>(unchecked((int)byteSize));
+        Span<byte> buffer = Alloc<byte>(unchecked((int)byteSize));
         result = GetHostFxrPath(buffer, ref buffer_size, 0);
         Debug.Assert(result is 0);
 
         var charSize = encoding.GetCharCount(buffer);
-        Span<char> path = GC.AllocateUninitializedArray<char>(charSize);
+        Span<char> path = Alloc<char>(charSize);
         encoding.GetChars(buffer, path);
 
         return path.TrimEnd('\0').ToString();
+    }
+
+    private static T[] Alloc<T>(int length)
+    {
+#if NET5_0_OR_GREATER
+        return GC.AllocateUninitializedArray<T>(length);
+#else
+        return new T[length];
+#endif
     }
 }

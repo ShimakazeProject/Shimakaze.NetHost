@@ -1,12 +1,18 @@
-﻿<Project Sdk="Microsoft.Build.NoTargets">
+﻿<Project>
 
-  <ItemGroup>
-    <Compile Include="*.cs" Pack="true" PackagePath="contentFiles\any\any\" />
-  </ItemGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition=" '$(NoTarget)' != 'true' " />
+  <Import Project="Sdk.props" Sdk="Microsoft.Build.NoTargets" Condition=" '$(NoTarget)' == 'true' " />
 
+  <PropertyGroup>
+    <RootNamespace>Shimakaze</RootNamespace>
+  </PropertyGroup>
+  
   <ItemGroup>
     <None Include="NetHost.props" Pack="true" PackagePath="build\$(PackageId).props" />
     <None Include="NetHost.props" Pack="true" PackagePath="buildTransitive\$(PackageId).props" />
   </ItemGroup>
+
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" '$(NoTarget)' != 'true' " />
+  <Import Project="Sdk.targets" Sdk="Microsoft.Build.NoTargets" Condition=" '$(NoTarget)' == 'true' " />
 
 </Project>

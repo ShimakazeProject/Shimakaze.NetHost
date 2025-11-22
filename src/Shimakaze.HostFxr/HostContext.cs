@@ -4,7 +4,11 @@ namespace Shimakaze;
 
 internal sealed class HostContext(HostFxr fxr, nint invalidHandleValue) : SafeHandle(invalidHandleValue, true)
 {
+#if NET7_0_OR_GREATER
     public override bool IsInvalid => handle is 0;
+#else
+    public override bool IsInvalid => handle is (nint)0; 
+#endif
 
     public unsafe int RunApp() => fxr.RunApp(handle);
 

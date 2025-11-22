@@ -1,8 +1,15 @@
-<Project>
+﻿<Project>
   <PropertyGroup>
     <!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <GlobalPackageReference Include="Polyfill" Version="8.9.1"  />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageVersion Include="System.Memory" Version="4.6.3" />
+  </ItemGroup>
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.1'))">
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 </Project>
