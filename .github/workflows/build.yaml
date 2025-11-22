@@ -65,5 +65,5 @@ jobs:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
         run: |
           Set-Location artifact
-          dotnet nuget push *.nupkg -s nuget -k $env:NUGET_TOKEN --skip-duplicate
+          dotnet nuget push *.nupkg -s nuget.org -k $env:NUGET_TOKEN --skip-duplicate
           Set-Location ..
