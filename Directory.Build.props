@@ -16,8 +16,30 @@
     <NoWarn>$(NoWarn);NU5128</NoWarn>
   </PropertyGroup>
     
+  <PropertyGroup>
+    <Authors>Shimakaze.Org</Authors>
+    <Copyright>Copyright © 2025 - $([System.DateTime]::Now.ToString("yyyy")) $(Authors)</Copyright>
+    <PackageProjectUrl>https://github.com/ShimakazeProject/Shimakaze.NetHost</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ShimakazeProject/Shimakaze.NetHost.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+    <IncludeSymbols>True</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IconPath Condition=" '$(IconPath)' == '' AND Exists('$(MSBuildProjectDirectory)\Assets\logo.png')">$(MSBuildProjectDirectory)\Assets\logo.png</IconPath>
+    <IconPath Condition=" '$(IconPath)' == '' AND Exists('$(MSBuildThisFileDirectory)\assets\logo.png')">$(MSBuildThisFileDirectory)\assets\logo.png</IconPath>
+    <PackageIcon Condition=" '$(IconPath)' != '' ">logo.png</PackageIcon>
+    <ReadmeFile Condition=" '$(ReadmeFile)' == '' AND Exists('$(MSBuildProjectDirectory)\ReadMe.md')">$(MSBuildProjectDirectory)\ReadMe.md</ReadmeFile>
+    <ReadmeFile Condition=" '$(ReadmeFile)' == '' AND Exists('$(MSBuildThisFileDirectory)\ReadMe.md')">$(MSBuildThisFileDirectory)\ReadMe.md</ReadmeFile>
+    <PackageReadmeFile Condition=" '$(ReadmeFile)' != '' ">ReadMe.md</PackageReadmeFile>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
   <ItemGroup>
-    <None Include="$(MSBuildThisFileDirectory)ReadMe.md" Pack="true" PackagePath="ReadMe.md" />
+    <None Include="$(IconPath)" Link="logo.png" Condition=" '$(IconPath)' != '' " Pack="True" PackagePath="\" />
+    <None Include="$(ReadmeFile)" Link="ReadMe.md" Condition=" '$(ReadmeFile)' != '' " Pack="True" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(NoTarget)' == 'true' ">
