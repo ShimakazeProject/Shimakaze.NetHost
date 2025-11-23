@@ -45,7 +45,7 @@ internal sealed class TString(nint handle) : SafeHandle(handle, true)
         }
     }
 
-    public static unsafe implicit operator byte*(TString? s) => (byte*)s?.handle;
+    public static unsafe implicit operator byte*(TString? s) => s is null ? null : (byte*)s.handle;
 }
 
 #if !NET7_0_OR_GREATER
