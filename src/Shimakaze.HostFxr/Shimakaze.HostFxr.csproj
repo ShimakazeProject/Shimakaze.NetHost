@@ -7,11 +7,6 @@
     <RootNamespace>Shimakaze</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Include="HostFxr.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
-    <None Include="HostFxr.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" />
-  </ItemGroup>
-
   <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition=" '$(NoTarget)' != 'true' " />
   <Import Project="Sdk.targets" Sdk="Microsoft.Build.NoTargets" Condition=" '$(NoTarget)' == 'true' " />
 
