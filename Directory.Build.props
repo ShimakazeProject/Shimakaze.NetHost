@@ -30,8 +30,8 @@
   <PropertyGroup>
     <Authors>Shimakaze.Org</Authors>
     <Copyright>Copyright © 2025 - $([System.DateTime]::Now.ToString("yyyy")) $(Authors)</Copyright>
-    <PackageProjectUrl>https://github.com/frg2089/Shimakaze.NetHost</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/frg2089/Shimakaze.NetHost.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ShimakazeProject/Shimakaze.NetHost</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ShimakazeProject/Shimakaze.NetHost.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
