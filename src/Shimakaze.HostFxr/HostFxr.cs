@@ -75,25 +75,27 @@ public sealed unsafe class HostFXR : IDisposable
         return _main_bundle_startupinfo.Value(args.Length, argv, host_path, dotnet_root, app_path, bundleHeaderOffset);
     }
 
-    public int InitializeForDotnetCommandLine(string[] args, in InitializeParameters parameters, out HostFXRHandle hostContextHandle)
+    public int InitializeForDotnetCommandLine(string[] args, InitializeParameters? parameters, out HostFXRHandle hostContextHandle)
     {
         if (_initialize_for_dotnet_command_line.Value is null)
             _initialize_for_dotnet_command_line = NativeLibrary.GetExport(_hModule, "hostfxr_initialize_for_dotnet_command_line");
 
+        hostfxr_initialize_parameters* param = null;
         using var _1 = StringMarshal.Fixed(args, out var argv);
-        using var _2 = parameters.Fixed(out var param);
-        var result = _initialize_for_dotnet_command_line.Value(args.Length, argv, &param, out var host_context_handle);
+        using var _2 = parameters?.Fixed(out *param);
+        var result = _initialize_for_dotnet_command_line.Value(args.Length, argv, param, out var host_context_handle);
         hostContextHandle = new(this, host_context_handle);
         return result;
     }
-    public int InitializeForRuntimeConfig(string runtimeConfigPath, in InitializeParameters parameters, out HostFXRHandle hostContextHandle)
+    public int InitializeForRuntimeConfig(string runtimeConfigPath, InitializeParameters? parameters, out HostFXRHandle hostContextHandle)
     {
         if (_initialize_for_runtime_config.Value is null)
             _initialize_for_runtime_config = NativeLibrary.GetExport(_hModule, "hostfxr_initialize_for_runtime_config");
 
+        hostfxr_initialize_parameters* param = null;
         using var _1 = StringMarshal.Fixed(runtimeConfigPath, out var runtime_config_path);
-        using var _2 = parameters.Fixed(out var param);
-        var result = _initialize_for_runtime_config.Value(runtime_config_path, &param, out var host_context_handle);
+        using var _2 = parameters?.Fixed(out *param);
+        var result = _initialize_for_runtime_config.Value(runtime_config_path, param, out var host_context_handle);
         hostContextHandle = new(this, host_context_handle);
         return result;
     }
