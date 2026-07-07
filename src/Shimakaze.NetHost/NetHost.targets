@@ -1,28 +1,100 @@
 ﻿<Project>
 
+  <!--
+    Resolve NetHost Runtime Identifier
+
+    Priority:
+      1. RuntimeIdentifier (user-defined or SDK)
+      2. DefaultAppHostRuntimeIdentifier (SDK fallback)
+      3. NETCoreSdkRuntimeIdentifier (tooling fallback)
+
+    This ensures a valid RID is always available for locating nethost assets.
+  -->
   <PropertyGroup>
-    <NetHostDir>$(NetCoreTargetingPackRoot)\Microsoft.NETCore.App.Host.$(NETCoreSdkRuntimeIdentifier)\$(BundledNETCoreAppPackageVersion)\runtimes\$(NETCoreSdkRuntimeIdentifier)\native</NetHostDir>
-    <NetHostStaticName Condition="$([MSBuild]::IsOsPlatform('Windows'))">libnethost.lib</NetHostStaticName>
-    <NetHostStaticName Condition="!$([MSBuild]::IsOsPlatform('Windows'))">libnethost.a</NetHostStaticName>
-    <NetHostName Condition="$([MSBuild]::IsOsPlatform('Windows'))">nethost.dll</NetHostName>
-    <NetHostName Condition="$([MSBuild]::IsOsPlatform('OSX'))">libnethost.dylib</NetHostName>
-    <NetHostName Condition="!$([MSBuild]::IsOsPlatform('Windows')) and !$([MSBuild]::IsOsPlatform('OSX'))">libnethost.so</NetHostName>
+    <NetHostRuntimeIdentifier Condition="'$(NetHostRuntimeIdentifier)' == ''">$(RuntimeIdentifier)</NetHostRuntimeIdentifier>
+    <NetHostRuntimeIdentifier Condition="'$(NetHostRuntimeIdentifier)' == ''">$(DefaultAppHostRuntimeIdentifier)</NetHostRuntimeIdentifier>
+    <NetHostRuntimeIdentifier Condition="'$(NetHostRuntimeIdentifier)' == ''">$(NETCoreSdkRuntimeIdentifier)</NetHostRuntimeIdentifier>
   </PropertyGroup>
 
-  <!-- These two ItemGroups are for static linking publishing as NativeAOT. -->
+  <!--
+    Select static library extension based on target platform.
+  -->
+  <PropertyGroup>
+    <_StaticLibraryExtension Condition="$(NetHostRuntimeIdentifier.StartsWith('win'))">.lib</_StaticLibraryExtension>
+    <_StaticLibraryExtension Condition="!$(NetHostRuntimeIdentifier.StartsWith('win'))">.a</_StaticLibraryExtension>
+
+    <_DynamicLibraryPrefix Condition="'$(_DynamicLibraryPrefix)' == '' and !$(NetHostRuntimeIdentifier.StartsWith('win'))">lib</_DynamicLibraryPrefix>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(_DynamicLibraryExtension)' == ''">
+    <_DynamicLibraryExtension>.so</_DynamicLibraryExtension>
+    <_DynamicLibraryExtension Condition="$(NetHostRuntimeIdentifier.StartsWith('win'))">.dll</_DynamicLibraryExtension>
+    <_DynamicLibraryExtension Condition="$(NetHostRuntimeIdentifier.StartsWith('osx'))">.dylib</_DynamicLibraryExtension>
+  </PropertyGroup>
+
+  <!--
+    NetHost library names:
+      - Static library for NativeAOT linking
+      - Dynamic library for runtime usage
+  -->
+  <PropertyGroup>
+    <StaticNetHostLibraryName>libnethost$(_StaticLibraryExtension)</StaticNetHostLibraryName>
+    <DynamicNetHostLibraryName>$(_DynamicLibraryPrefix)nethost$(_DynamicLibraryExtension)</DynamicNetHostLibraryName>
+  </PropertyGroup>
+
+  <!--
+    Resolve nethost package location and native asset path.
+
+    Lookup order:
+      1. Targeting pack root (installed SDK/shared framework layout)
+      2. NuGet global packages folder (restored packages)
+
+    Final layout:
+      $(NetHostPath)
+        /runtimes/$(NetHostRuntimeIdentifier)/native
+  -->
+  <PropertyGroup>
+    <NetHostPackageName>Microsoft.NETCore.App.Host.$(NetHostRuntimeIdentifier)</NetHostPackageName>
+
+    <NetHostBasePath Condition="Exists('$(NetCoreTargetingPackRoot)\$(NetHostPackageName)')">$(NetCoreTargetingPackRoot)\$(NetHostPackageName)</NetHostBasePath>
+
+    <NetHostBasePath Condition=" '$(NetHostBasePath)' == '' ">$(NuGetPackageRoot)\$(NetHostPackageName.ToLower())</NetHostBasePath>
+
+    <NetHostPath>$(NetHostBasePath)\$(BundledNETCoreAppPackageVersion)\runtimes\$(NetHostRuntimeIdentifier)\native</NetHostPath>
+  </PropertyGroup>
+
+  <!--
+    NativeAOT static linking assets.
+
+    - NativeLibrary:
+        Exposes nethost static library to NativeAOT publishing pipeline.
+
+    - DirectPInvoke:
+        Declares direct P/Invoke dependency for linker resolution.
+  -->
   <ItemGroup>
-    <NativeLibrary Include="$(NetHostDir)\$(NetHostStaticName)" />
+    <NativeLibrary Include="$(NetHostPath)\$(StaticNetHostLibraryName)" />
     <DirectPInvoke Include="nethost" />
   </ItemGroup>
-  
-  <ItemGroup Condition="!$([MSBuild]::IsOsPlatform('Windows'))">
-    <!-- This is needed by libnethost.a. -->
+
+  <!--
+    Additional linker requirements for non-Windows platforms.
+
+    libnethost.a depends on libstdc++.
+  -->
+  <ItemGroup Condition="!$(NetHostRuntimeIdentifier.StartsWith('win'))">
     <LinkerArg Include="-lstdc++" />
   </ItemGroup>
 
+  <!--
+    Runtime asset exposure:
+
+    - Static library: available for build/link stages
+    - Dynamic library: copied to output for runtime loading
+  -->
   <ItemGroup>
-    <None Include="$(NetHostDir)\$(NetHostStaticName)" Link="$(NetHostStaticName)" />
-    <None Include="$(NetHostDir)\$(NetHostName)" Link="$(NetHostName)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(NetHostPath)\$(StaticNetHostLibraryName)" Link="$(StaticNetHostLibraryName)" />
+    <None Include="$(NetHostPath)\$(DynamicNetHostLibraryName)" Link="$(DynamicNetHostLibraryName)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

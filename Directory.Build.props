@@ -1,17 +1,31 @@
 ﻿<Project>
   <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+
   <PropertyGroup>
-    <_IsPacking>$(NoTarget)</_IsPacking>
-    <_IsPacking Condition=" '$(MSBuildProjectName)' == 'Shimakaze.HostFxr' ">false</_IsPacking>
-    <_IsPacking Condition=" '$(_IsPacking)' == '' ">false</_IsPacking>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net7.0;net6.0;net5.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netcoreapp3.1;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netcoreapp2.2;netcoreapp2.1;netcoreapp2.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netcoreapp1.1;netcoreapp1.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);net481;net48;net472;net471;net47;net462</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);net461;net46;net452;net451;net45;net40</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);net35;net30;net20</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>$(TargetFrameworks);netstandard1.6;netstandard1.5;netstandard1.4;netstandard1.3;netstandard1.2;netstandard1.1</TargetFrameworks>
+
+    <RootNamespace>Shimakaze</RootNamespace>
+
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsAotCompatible Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+
+    <!-- 禁用 NuGet 审核 -->
+    <NuGetAudit>false</NuGetAudit>
+    <CheckNotRecommendedTargetFramework>false</CheckNotRecommendedTargetFramework>
   </PropertyGroup>
-    
+
   <PropertyGroup>
     <Authors>Shimakaze.Org</Authors>
     <Copyright>Copyright © 2025 - $([System.DateTime]::Now.ToString("yyyy")) $(Authors)</Copyright>
@@ -38,5 +52,4 @@
     <None Include="$(ReadmeFile)" Link="ReadMe.md" Condition=" '$(ReadmeFile)' != '' " Pack="True" PackagePath="\" />
   </ItemGroup>
 
-  
 </Project>

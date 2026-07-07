@@ -1,80 +1,239 @@
-﻿using System.Runtime.InteropServices;
-using System.Text;
+﻿using System;
+using System.Runtime.InteropServices;
+
+using Shimakaze.Marshals;
+using Shimakaze.Native;
 
 namespace Shimakaze;
 
-public sealed class HostFxr(nint handle) : SafeHandleZeroIsInvalid(handle)
+public sealed unsafe class HostFXR : IDisposable
 {
-    public const int Success = 0;
-    public const int Success_HostAlreadyInitialized = 1;
-    public const int Success_DifferentRuntimeProperties = 2;
+    private bool _disposedValue;
+    private readonly nint _hModule;
+    private readonly bool _leaveOpen;
 
-    // hostfxr_get_available_sdks
-    // hostfxr_get_native_search_directories
-    // hostfxr_resolve_sdk
-    // hostfxr_resolve_sdk2
-    public new unsafe delegate* unmanaged[Cdecl]<nint, int> Close => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, int>)NativeLibrary.GetExport(handle, "hostfxr_close");
-    public unsafe delegate* unmanaged[Cdecl]<DotnetEnvironmentInfo*, void*, void> GetDotnetEnvironmentInfoResult => field != null ? field : field = (delegate* unmanaged[Cdecl]<DotnetEnvironmentInfo*, void*, void>)NativeLibrary.GetExport(handle, "hostfxr_get_dotnet_environment_info");
-    public unsafe delegate* unmanaged[Cdecl]<nint, DelegateType, out void**, int> GetRuntimeDelegate => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, DelegateType, out void**, int>)NativeLibrary.GetExport(handle, "hostfxr_get_runtime_delegate");
-    public unsafe delegate* unmanaged[Cdecl]<nint, ref nuint, out byte**, out byte**, int> GetRuntimeProperties => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, ref nuint, out byte**, out byte**, int>)NativeLibrary.GetExport(handle, "hostfxr_get_runtime_properties");
-    public unsafe delegate* unmanaged[Cdecl]<nint, byte*, out byte**, int> GetRuntimePropertyValue => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, byte*, out byte**, int>)NativeLibrary.GetExport(handle, "hostfxr_get_runtime_property_value");
-    public unsafe delegate* unmanaged[Cdecl]<int, byte**, InitializeParameters*, out nint, int> InitializeForDotnetCommandLine => field != null ? field : field = (delegate* unmanaged[Cdecl]<int, byte**, InitializeParameters*, out nint, int>)NativeLibrary.GetExport(handle, "hostfxr_initialize_for_dotnet_command_line");
-    public unsafe delegate* unmanaged[Cdecl]<byte*, InitializeParameters*, out nint, int> InitializeForRuntimeConfig => field != null ? field : field = (delegate* unmanaged[Cdecl]<byte*, InitializeParameters*, out nint, int>)NativeLibrary.GetExport(handle, "hostfxr_initialize_for_runtime_config");
-    public unsafe delegate* unmanaged[Cdecl]<int, byte**, int> Main => field != null ? field : field = (delegate* unmanaged[Cdecl]<int, byte**, int>)NativeLibrary.GetExport(handle, "hostfxr_main");
-    public unsafe delegate* unmanaged[Cdecl]<int, byte**, byte*, byte*, byte*, long, int> MainBundleStartupinfo => field != null ? field : field = (delegate* unmanaged[Cdecl]<int, byte**, byte*, byte*, byte*, long, int>)NativeLibrary.GetExport(handle, "hostfxr_main_bundle_startupinfo");
-    public unsafe delegate* unmanaged[Cdecl]<int, byte**, byte*, byte*, byte*, int> MainStartupinfo => field != null ? field : field = (delegate* unmanaged[Cdecl]<int, byte**, byte*, byte*, byte*, int>)NativeLibrary.GetExport(handle, "hostfxr_main_startupinfo");
-    public unsafe delegate* unmanaged[Cdecl]<byte*, /*opt*/ InitializeParameters*, /*opt*/ delegate* unmanaged[Cdecl]<ResolveFrameworksResult*, void*, void>, /*opt*/ void*, int> ResolveFrameworksForRuntimeConfig => field != null ? field : field = (delegate* unmanaged[Cdecl]<byte*, InitializeParameters*, delegate* unmanaged[Cdecl]<ResolveFrameworksResult*, void*, void>, void*, int>)NativeLibrary.GetExport(handle, "hostfxr_resolve_frameworks_for_runtime_config");
-    public unsafe delegate* unmanaged[Cdecl]<nint, int> RunApp => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, int>)NativeLibrary.GetExport(handle, "hostfxr_run_app");
-    public unsafe delegate* unmanaged[Cdecl]<delegate* unmanaged[Cdecl]<byte*, void>, delegate* unmanaged[Cdecl]<byte*, void>> SetErrorWriter => field != null ? field : field = (delegate* unmanaged[Cdecl]<delegate* unmanaged[Cdecl]<byte*, void>, delegate* unmanaged[Cdecl]<byte*, void>>)NativeLibrary.GetExport(handle, "hostfxr_set_error_writer");
-    public unsafe delegate* unmanaged[Cdecl]<nint, byte*, byte*, int> SetRuntimePropertyValue => field != null ? field : field = (delegate* unmanaged[Cdecl]<nint, byte*, byte*, int>)NativeLibrary.GetExport(handle, "hostfxr_set_runtime_property_value");
+    private hostfxr_main_fn _main;
+    private hostfxr_main_startupinfo_fn _main_startupinfo;
+    private hostfxr_main_bundle_startupinfo_fn _main_bundle_startupinfo;
+    private hostfxr_set_error_writer_fn _set_error_writer;
+    private hostfxr_initialize_for_dotnet_command_line_fn _initialize_for_dotnet_command_line;
+    private hostfxr_initialize_for_runtime_config_fn _initialize_for_runtime_config;
+    private hostfxr_get_runtime_property_value_fn _get_runtime_property_value;
+    private hostfxr_set_runtime_property_value_fn _set_runtime_property_value;
+    private hostfxr_get_runtime_properties_fn _get_runtime_properties;
+    private hostfxr_run_app_fn _run_app;
+    private hostfxr_get_runtime_delegate_fn _get_runtime_delegate;
+    private hostfxr_close_fn _close;
+    private hostfxr_get_dotnet_environment_info_fn _get_dotnet_environment_info;
 
-    internal static Encoding Encoding => field ??=
-#if NETFRAMEWORK
-        Encoding.Unicode;
-#else
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? Encoding.Unicode
-            : Encoding.UTF8;
-#endif
-
-    internal static string? PtrToString(nint ptr)
+    private HostFXR(nint hModule, bool leaveOpen)
     {
-#if !NETFRAMEWORK
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-#endif
-        {
-            return Marshal.PtrToStringUni(ptr);
-        }
-#if !NETFRAMEWORK
-        else
-        {
-#if NETSTANDARD2_0
-            return Marshal.PtrToStringAnsi(ptr);
-#else
-            return Marshal.PtrToStringUTF8(ptr);
-#endif
-        }
-#endif
+        _hModule = hModule;
+        _leaveOpen = leaveOpen;
     }
 
-    internal static readonly int CharSize =
-#if NETFRAMEWORK
-        sizeof(char);
-#else
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? sizeof(char)
-            : sizeof(byte);
-#endif
-
-    public HostFxr(string hostfxrPath)
-        : this(NativeLibrary.Load(hostfxrPath))
+    public HostFXR(nint hModule)
+        : this(hModule, false)
     {
     }
 
-    /// <inheritdoc/>
-    protected override bool ReleaseHandle()
+    public HostFXR(string hostfxrPath)
+        : this(NativeLibrary.Load(hostfxrPath), true)
     {
-        NativeLibrary.Free(handle);
-        return true;
+    }
+
+    public int Main(string[] args)
+    {
+        if (_main.Value is null)
+            _main = NativeLibrary.GetExport(_hModule, "hostfxr_main");
+
+        using var _1 = StringMarshal.Fixed(args, out var argv);
+        return _main.Value(args.Length, argv);
+    }
+
+    public int MainStartupinfo(string[] args, string hostPath, string dotnetRoot, string appPath)
+    {
+        if (_main_startupinfo.Value is null)
+            _main_startupinfo = NativeLibrary.GetExport(_hModule, "hostfxr_main_startupinfo");
+
+        using var _1 = StringMarshal.Fixed(args, out var argv);
+        using var _2 = StringMarshal.Fixed(hostPath, out var host_path);
+        using var _3 = StringMarshal.Fixed(dotnetRoot, out var dotnet_root);
+        using var _4 = StringMarshal.Fixed(appPath, out var app_path);
+        return _main_startupinfo.Value(args.Length, argv, host_path, dotnet_root, app_path);
+    }
+
+    public int MainBundleStartupinfo(string[] args, string hostPath, string dotnetRoot, string appPath, long bundleHeaderOffset)
+    {
+        if (_main_bundle_startupinfo.Value is null)
+            _main_bundle_startupinfo = NativeLibrary.GetExport(_hModule, "hostfxr_main_bundle_startupinfo");
+
+        using var _1 = StringMarshal.Fixed(args, out var argv);
+        using var _2 = StringMarshal.Fixed(hostPath, out var host_path);
+        using var _3 = StringMarshal.Fixed(dotnetRoot, out var dotnet_root);
+        using var _4 = StringMarshal.Fixed(appPath, out var app_path);
+        return _main_bundle_startupinfo.Value(args.Length, argv, host_path, dotnet_root, app_path, bundleHeaderOffset);
+    }
+
+    public int InitializeForDotnetCommandLine(string[] args, in InitializeParameters parameters, out HostFXRHandle hostContextHandle)
+    {
+        if (_initialize_for_dotnet_command_line.Value is null)
+            _initialize_for_dotnet_command_line = NativeLibrary.GetExport(_hModule, "hostfxr_initialize_for_dotnet_command_line");
+
+        using var _1 = StringMarshal.Fixed(args, out var argv);
+        using var _2 = parameters.Fixed(out var param);
+        var result = _initialize_for_dotnet_command_line.Value(args.Length, argv, &param, out var host_context_handle);
+        hostContextHandle = new(this, host_context_handle);
+        return result;
+    }
+    public int InitializeForRuntimeConfig(string runtimeConfigPath, in InitializeParameters parameters, out HostFXRHandle hostContextHandle)
+    {
+        if (_initialize_for_runtime_config.Value is null)
+            _initialize_for_runtime_config = NativeLibrary.GetExport(_hModule, "hostfxr_initialize_for_runtime_config");
+
+        using var _1 = StringMarshal.Fixed(runtimeConfigPath, out var runtime_config_path);
+        using var _2 = parameters.Fixed(out var param);
+        var result = _initialize_for_runtime_config.Value(runtime_config_path, &param, out var host_context_handle);
+        hostContextHandle = new(this, host_context_handle);
+        return result;
+    }
+    internal int GetRuntimePropertyValue(HostFXRHandle hostContextHandle, string name, out string? value, int bufferSize = 256)
+    {
+        if (_get_runtime_property_value.Value is null)
+            _get_runtime_property_value = NativeLibrary.GetExport(_hModule, "hostfxr_get_runtime_property_value");
+
+        int result;
+        using var _1 = StringMarshal.Fixed(name, out var arg1);
+        using var _2 = StringMarshal.Alloc(bufferSize, out var buffer);
+        result = _get_runtime_property_value.Value(hostContextHandle.Handle, arg1, &buffer);
+        value = StringMarshal.From(buffer, bufferSize);
+
+        return result;
+    }
+    internal int SetRuntimePropertyValue(HostFXRHandle hostContextHandle, string name, string? value)
+    {
+        if (_set_runtime_property_value.Value is null)
+            _set_runtime_property_value = NativeLibrary.GetExport(_hModule, "hostfxr_set_runtime_property_value");
+
+        using var _1 = StringMarshal.Fixed(name, out var arg1);
+        using var _2 = StringMarshal.Fixed(value, out var arg2);
+        return _set_runtime_property_value.Value(hostContextHandle.Handle, arg1, arg2);
+
+    }
+    internal int GetRuntimeProperties(HostFXRHandle hostContextHandle, out int count)
+    {
+        if (_get_runtime_properties.Value is null)
+            _get_runtime_properties = NativeLibrary.GetExport(_hModule, "hostfxr_get_runtime_properties");
+
+        size_t i = default;
+        var result = _get_runtime_properties.Value(hostContextHandle.Handle, ref i, null, null);
+        count = (int)i.Value;
+
+        return result;
+    }
+    internal int GetRuntimeProperties(HostFXRHandle hostContextHandle, int count, out string?[] keys, out string?[] values, int bufferSize = 256)
+    {
+        if (_get_runtime_properties.Value is null)
+            _get_runtime_properties = NativeLibrary.GetExport(_hModule, "hostfxr_get_runtime_properties");
+
+        size_t i = count;
+
+        using var _1 = StringMarshal.Alloc(count, bufferSize, out var arg1);
+        using var _2 = StringMarshal.Alloc(count, bufferSize, out var arg2);
+        var result = _get_runtime_properties.Value(hostContextHandle.Handle, ref i, arg1, arg2);
+        keys = StringMarshal.From(arg1, count, bufferSize);
+        values = StringMarshal.From(arg2, count, bufferSize);
+
+        return result;
+    }
+    internal int GetRuntimeProperties(HostFXRHandle hostContextHandle, out string?[] keys, out string?[] values, int bufferSize = 256)
+    {
+        _ = GetRuntimeProperties(hostContextHandle, out int count);
+        return GetRuntimeProperties(hostContextHandle, count, out keys, out values, bufferSize);
+
+    }
+    internal int RunApp(HostFXRHandle hostContextHandle)
+    {
+        if (_run_app.Value is null)
+            _run_app = NativeLibrary.GetExport(_hModule, "hostfxr_run_app");
+
+        return _run_app.Value(hostContextHandle.Handle);
+    }
+    internal int GetRuntimeDelegate(HostFXRHandle hostContextHandle, DelegateType type, out nint @delegate)
+    {
+        if (_get_runtime_delegate.Value is null)
+            _get_runtime_delegate = NativeLibrary.GetExport(_hModule, "hostfxr_get_runtime_delegate");
+
+        var result = _get_runtime_delegate.Value(hostContextHandle.Handle, (hostfxr_delegate_type)type, out var ptr);
+        @delegate = (nint)ptr;
+        return result;
+    }
+    internal int Close(HostFXRHandle hostContextHandle)
+    {
+        if (_close.Value is null)
+            _close = NativeLibrary.GetExport(_hModule, "hostfxr_close");
+
+        return _close.Value(hostContextHandle.Handle);
+    }
+
+    public ErrorWriter SetErrorWriter(ErrorWriter errorWriter)
+    {
+        if (_set_error_writer.Value is null)
+            _set_error_writer = NativeLibrary.GetExport(_hModule, "hostfxr_set_error_writer");
+
+        hostfxr_error_writer_fn.Delegate tmp = (message) => errorWriter(StringMarshal.From(message, ushort.MaxValue));
+        hostfxr_error_writer_fn error_writer = Marshal.GetFunctionPointerForDelegate(tmp);
+        error_writer = _set_error_writer.Value(error_writer);
+        return (message) =>
+        {
+            using var _1 = StringMarshal.Fixed(message, out var ptr);
+            error_writer.Value(ptr);
+        };
+    }
+
+    public int GetDotnetEnvironmentInfo(string dotnetRoot, GetDotnetEnvironmentInfoResult result, object? resultContext)
+    {
+        if (_get_dotnet_environment_info.Value is null)
+            _get_dotnet_environment_info = NativeLibrary.GetExport(_hModule, "hostfxr_get_dotnet_environment_info");
+
+        void* result_context = null;
+        if (resultContext is not null)
+        {
+            var handle = GCHandle.Alloc(resultContext);
+            result_context = (void*)GCHandle.ToIntPtr(handle);
+        }
+        using var _1 = StringMarshal.Fixed(dotnetRoot, out var dotnet_root);
+
+        hostfxr_get_dotnet_environment_info_result_fn.Delegate tmp = (info, result_context) =>
+        {
+            object? resultContext = null;
+            if (result_context is not null)
+                resultContext = GCHandle.FromIntPtr((nint)result_context).Target;
+
+            result(DotNetEnvironmentInfo.From(info), resultContext);
+        };
+        hostfxr_get_dotnet_environment_info_result_fn fnResult = Marshal.GetFunctionPointerForDelegate(tmp);
+        return _get_dotnet_environment_info.Value(dotnet_root, null, fnResult, result_context);
+    }
+
+    private void DisposeCore()
+    {
+        if (_disposedValue)
+            return;
+
+        if (!_leaveOpen)
+            NativeLibrary.Free(_hModule);
+        _disposedValue = true;
+    }
+
+    ~HostFXR()
+    {
+        DisposeCore();
+    }
+
+    public void Dispose()
+    {
+        DisposeCore();
+        GC.SuppressFinalize(this);
     }
 }

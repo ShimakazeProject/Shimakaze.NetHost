@@ -1,35 +1,10 @@
-﻿<Project>
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" Condition="!$(_IsPacking)" />
-  <Import Project="Sdk.props" Sdk="Microsoft.Build.NoTargets" Condition="$(_IsPacking)" />
-
-  <PropertyGroup>
-    <TargetFrameworks Condition="!$(_IsPacking)">
-      net10.0;net9.0;net8.0;net7.0;net6.0;net5.0;
-      netcoreapp3.1;netcoreapp3.0;
-      net48;net472;net471;net47;
-      netstandard2.0;netstandard2.1
-    </TargetFrameworks>
-    <TargetFramework Condition="$(_IsPacking)">netstandard2.0</TargetFramework>
-
-    <RootNamespace>Shimakaze</RootNamespace>
-  </PropertyGroup>
-  
   <ItemGroup>
     <None Include="NetHost.targets" Pack="true" PackagePath="build\$(PackageId).targets" />
     <None Include="NetHost.targets" Pack="true" PackagePath="buildTransitive\$(PackageId).targets" />
   </ItemGroup>
 
-  <ItemGroup Condition="$(_IsPacking)">
-    <Compile Include="*.cs" Pack="true" PackagePath="contentFiles\cs\netstandard2.0\$(PackageId)\" />
-  </ItemGroup>
-
-  <ItemGroup Condition="!$(_IsPacking)">
-    <PackageReference Include="Polyfill" />
-    <PackageReference Include="System.Memory"  Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'netstandard2.1'))" />
-  </ItemGroup>
-
-  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" Condition="!$(_IsPacking)" />
-  <Import Project="Sdk.targets" Sdk="Microsoft.Build.NoTargets" Condition="$(_IsPacking)" />
+  <Import Project="NetHost.targets" />
 
 </Project>

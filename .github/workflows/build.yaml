@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: 签出仓库
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           lfs: true
           fetch-depth: 0
@@ -24,20 +24,24 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           global-json-file: ./global.json
-          cache: false
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
 
-      - name: 还原本地工具
-        run: dotnet tool restore
+      - name: 还原
+        run: dotnet restore --graph --artifacts-path artifacts
+
+      - name: 生成
+        run: dotnet build --graph --artifacts-path artifacts --configuration Release --no-restore
 
       - name: 打包
-        run: dotnet pack --graph --artifacts-path artifacts --configuration Release -p:"Version=$((dotnet gitversion | ConvertFrom-Json).SemVer)" -p:NoTarget=true
+        run: dotnet pack --graph --artifacts-path artifacts --configuration Release --no-restore --no-build --include-symbols
 
       - name: 收集 Nuget 包
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages
           path: |
-            artifacts\package\release\*
+            artifacts/package/release/*
           retention-days: 3
 
   release:
@@ -49,21 +53,36 @@ jobs:
       discussions: write
     runs-on: ubuntu-latest
     steps:
+      - name: 签出仓库
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: ''
+
+      - name: 配置 .Net 环境
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: ./global.json
+          cache: false
+
       - name: Download a Build Artifact
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: nuget-packages
-          path: artifact
+          path: artifacts
+
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          files: artifact/*
+          files: artifacts/*
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref, '-') }}
+
       - name: 推送 Nuget 包
         shell: pwsh
         continue-on-error: true
         env:
           NUGET_TOKEN: ${{ secrets.NUGET_TOKEN }}
         run: |
-          Set-Location artifact
-          dotnet nuget push *.nupkg -s nuget.org -k $env:NUGET_TOKEN --skip-duplicate
+          Set-Location artifacts
+          dotnet nuget push *.nupkg -s nuget -k $env:NUGET_TOKEN --skip-duplicate
           Set-Location ..

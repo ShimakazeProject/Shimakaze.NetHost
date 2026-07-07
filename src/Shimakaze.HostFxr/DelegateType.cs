@@ -4,11 +4,11 @@ public enum DelegateType
 {
     ComActivation,
     LoadInMemoryAssembly,
-    WinRTActivation,
+    WinrtActivation,
     ComRegister,
     ComUnregister,
     LoadAssemblyAndGetFunctionPointer,
     GetFunctionPointer,
     LoadAssembly,
     LoadAssemblyBytes,
-};
+}
