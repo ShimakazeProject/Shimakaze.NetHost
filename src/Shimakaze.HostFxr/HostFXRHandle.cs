@@ -17,6 +17,8 @@ public sealed class HostFXRHandle : IDisposable
 
     internal hostfxr_handle Handle { get; }
 
+    public bool IsNull => Handle.Value is 0;
+
     internal HostFXRHandle(HostFXR hostfxr, hostfxr_handle handle)
     {
         _hostfxr = hostfxr;
