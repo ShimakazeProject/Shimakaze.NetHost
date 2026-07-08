@@ -1,6 +1,13 @@
 ﻿<Project>
 
   <!--
+    Resolve DynamicNetHostCopyToOutputDirectory
+  -->
+  <PropertyGroup>
+    <DynamicNetHostCopyToOutputDirectory Condition="'$(DynamicNetHostCopyToOutputDirectory)' == ''">PreserveNewest</DynamicNetHostCopyToOutputDirectory>
+  </PropertyGroup>
+
+  <!--
     Resolve NetHost Runtime Identifier
 
     Priority:
@@ -94,7 +101,7 @@
   -->
   <ItemGroup>
     <None Include="$(NetHostPath)\$(StaticNetHostLibraryName)" Link="$(StaticNetHostLibraryName)" />
-    <None Include="$(NetHostPath)\$(DynamicNetHostLibraryName)" Link="$(DynamicNetHostLibraryName)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(NetHostPath)\$(DynamicNetHostLibraryName)" Link="$(DynamicNetHostLibraryName)" CopyToOutputDirectory="$(DynamicNetHostCopyToOutputDirectory)" />
   </ItemGroup>
 
 </Project>
