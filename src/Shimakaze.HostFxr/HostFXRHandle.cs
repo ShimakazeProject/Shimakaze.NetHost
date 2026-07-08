@@ -37,6 +37,9 @@ public sealed class HostFXRHandle : IDisposable
         using var _2 = StringMarshal.Fixed(typeName, out var type_name);
         using var _3 = StringMarshal.Fixed(methodName, out var method_name);
         using var _4 = StringMarshal.Fixed(delegateTypeName, out var delegate_type_name);
+        if (delegateTypeName is HostFXR.UNMANAGEDCALLERSONLY_METHOD)
+            delegate_type_name = (char_t*)-1;
+
         Marshal.ThrowExceptionForHR(_load_assembly_and_get_function_pointer.Invoke(assembly_path, type_name, method_name, delegate_type_name, null, out void* ptr));
         @delegate = (nint)ptr;
     }
@@ -52,6 +55,9 @@ public sealed class HostFXRHandle : IDisposable
         using var _1 = StringMarshal.Fixed(typeName, out var type_name);
         using var _2 = StringMarshal.Fixed(methodName, out var method_name);
         using var _3 = StringMarshal.Fixed(delegateTypeName, out var delegate_type_name);
+        if (delegateTypeName is HostFXR.UNMANAGEDCALLERSONLY_METHOD)
+            delegate_type_name = (char_t*)-1;
+
         Marshal.ThrowExceptionForHR(_get_function_pointer.Invoke(type_name, method_name, delegate_type_name, null, null, out void* ptr));
         @delegate = (nint)ptr;
     }

@@ -8,6 +8,7 @@ namespace Shimakaze;
 
 public sealed unsafe class HostFXR : IDisposable
 {
+    public const string UNMANAGEDCALLERSONLY_METHOD = "UNMANAGEDCALLERSONLY_METHOD";
     private bool _disposedValue;
     private readonly nint _hModule;
     private readonly bool _leaveOpen;
