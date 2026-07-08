@@ -18,7 +18,7 @@ internal static class StringMarshal
 
     public static unsafe IDisposable Alloc(int count, int bufferSize, out char_t** ptr)
     {
-        IDisposable[] handles = NativeMemoryHandle.Alloc<IDisposable>(count);
+        var handles = NativeMemoryHandle.Alloc<IDisposable>(count);
         NativeMemoryHandle handle = new(count, sizeof(char_t*));
         ptr = (char_t**)handle.Handle;
 
@@ -36,9 +36,9 @@ internal static class StringMarshal
             return CombineDisposable.Default;
         }
 
-        Encoding encoding = OS.IsWindows ? Encoding.Unicode : Encoding.UTF8;
-        var size = encoding.GetByteCount(str);
-        size += (encoding == Encoding.Unicode ? 2 : 1);
+        var encoding = OS.IsWindows ? Encoding.Unicode : Encoding.UTF8;
+        int size = encoding.GetByteCount(str);
+        size += encoding == Encoding.Unicode ? 2 : 1;
         NativeMemoryHandle handle = new(size, sizeof(char_t));
         ptr = (char_t*)handle.Handle;
 
@@ -49,7 +49,7 @@ internal static class StringMarshal
             encoding.GetBytes(sz, str.Length, (byte*)ptr, size);
 #else
         {
-            var tmparr = encoding.GetBytes(str);
+            byte[] tmparr = encoding.GetBytes(str);
             Marshal.Copy(tmparr, 0, (nint)ptr, tmparr.Length);
         }
 #endif
@@ -69,7 +69,7 @@ internal static class StringMarshal
             return CombineDisposable.Default;
         }
 
-        IDisposable[] handles = NativeMemoryHandle.Alloc<IDisposable>(arr.Length);
+        var handles = NativeMemoryHandle.Alloc<IDisposable>(arr.Length);
         NativeMemoryHandle handle = new(arr.Length, sizeof(char_t*));
         ptr = (char_t**)handle.Handle;
 
@@ -86,7 +86,7 @@ internal static class StringMarshal
 
         if (OS.IsWindows)
         {
-            var ptr = (char*)buffer;
+            char* ptr = (char*)buffer;
             int i = 0;
             for (; i < maxSize; i++)
             {
@@ -98,7 +98,7 @@ internal static class StringMarshal
         }
         else
         {
-            var ptr = (byte*)buffer;
+            byte* ptr = (byte*)buffer;
             int i = 0;
             for (; i < maxSize; i++)
             {
@@ -108,12 +108,12 @@ internal static class StringMarshal
 #if NET46_OR_GREATER || NETSTANDARD1_3_OR_GREATER || NET || NETCOREAPP
             return Encoding.UTF8.GetString(ptr, i);
 #elif NET20_OR_GREATER
-            var size = Encoding.UTF8.GetCharCount(ptr, i);
+            int size = Encoding.UTF8.GetCharCount(ptr, i);
             char* tmp = stackalloc char[size];
             Encoding.UTF8.GetChars(ptr, i, tmp, size);
             return new(tmp, 0, size);
 #else
-            var arr = new byte[i];
+            byte[] arr = new byte[i];
             Marshal.Copy((nint)ptr, arr, 0, i);
             return Encoding.UTF8.GetString(arr, 0, i);
 #endif
@@ -121,7 +121,7 @@ internal static class StringMarshal
     }
     public static unsafe string?[] From(char_t** buffer, int count, int maxSize)
     {
-        var arr = new string?[count];
+        string?[] arr = new string?[count];
         for (int i = 0; i < arr.Length; i++)
             arr[i] = From(buffer[i], maxSize);
 

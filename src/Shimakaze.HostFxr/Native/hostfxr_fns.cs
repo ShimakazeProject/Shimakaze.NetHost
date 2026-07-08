@@ -2,7 +2,6 @@
 
 namespace Shimakaze.Native;
 
-
 [StructLayout(LayoutKind.Sequential, Pack = 1)]
 internal struct hostfxr_main_fn
 {
@@ -158,7 +157,6 @@ internal struct hostfxr_get_dotnet_environment_info_result_fn
         void> Value;
 
     public static unsafe implicit operator hostfxr_get_dotnet_environment_info_result_fn(nint ptr) => new() { Value = (delegate* unmanaged[Cdecl]<hostfxr_dotnet_environment_info*, void*, void>)ptr };
-
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public unsafe delegate void Delegate(hostfxr_dotnet_environment_info* info, void* resultContext);

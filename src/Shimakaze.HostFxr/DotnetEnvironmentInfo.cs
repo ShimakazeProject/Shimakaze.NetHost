@@ -14,8 +14,8 @@ public sealed class DotNetEnvironmentInfo
 
     internal static unsafe DotNetEnvironmentInfo From(hostfxr_dotnet_environment_info* info)
     {
-        var hostfxrVersion = StringMarshal.From(info->hostfxr_version, ushort.MaxValue);
-        var hostfxrCommitHash = StringMarshal.From(info->hostfxr_commit_hash, ushort.MaxValue);
+        string? hostfxrVersion = StringMarshal.From(info->hostfxr_version, ushort.MaxValue);
+        string? hostfxrCommitHash = StringMarshal.From(info->hostfxr_commit_hash, ushort.MaxValue);
         var sdks = NativeMemoryHandle.Alloc<DotNetEnvironmentSdkInfo>((int)info->sdk_count.Value);
         var frameworks = NativeMemoryHandle.Alloc<DotNetEnvironmentFrameworkInfo>((int)info->framework_count.Value);
         for (int i = 0; i < sdks.Length; i++)
@@ -38,11 +38,11 @@ public sealed class DotNetEnvironmentInfo
         var _2 = StringMarshal.Fixed(HostfxrCommitHash, out var hostfxr_commit_hash);
         NativeMemoryHandle hSdks = new(Sdks.Length, sizeof(hostfxr_dotnet_environment_sdk_info));
         var dsdks = NativeMemoryHandle.Alloc<IDisposable>(Sdks.Length);
-        hostfxr_dotnet_environment_sdk_info* sdks = (hostfxr_dotnet_environment_sdk_info*)hSdks.Handle;
+        var sdks = (hostfxr_dotnet_environment_sdk_info*)hSdks.Handle;
 
         NativeMemoryHandle hFrameworks = new(Frameworks.Length, sizeof(hostfxr_dotnet_environment_framework_info));
         var dframeworks = NativeMemoryHandle.Alloc<IDisposable>(Frameworks.Length);
-        hostfxr_dotnet_environment_framework_info* frameworks = (hostfxr_dotnet_environment_framework_info*)hFrameworks.Handle;
+        var frameworks = (hostfxr_dotnet_environment_framework_info*)hFrameworks.Handle;
         for (int i = 0; i < Sdks.Length; i++)
             dsdks[i] = Sdks[i].Fixed(out sdks[i]);
         for (int i = 0; i < Frameworks.Length; i++)

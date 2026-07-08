@@ -49,7 +49,7 @@ public partial class NetHost
     public static unsafe string GetHostFxrPath()
     {
         nint buffer_size = 0;
-        var result = GetHostFxrPath(null, ref buffer_size, 0);
+        int result = GetHostFxrPath(null, ref buffer_size, 0);
         Debug.Assert(result is unchecked((int)0x80008098));
 
         nint byteSize = buffer_size;
@@ -69,20 +69,20 @@ public partial class NetHost
         if (encoding == Encoding.Unicode)
             byteSize *= 2;
 
-        var buffer = Alloc<byte>((int)byteSize);
+        byte[] buffer = Alloc<byte>((int)byteSize);
         result = GetHostFxrPath(buffer, ref buffer_size, 0);
         Debug.Assert(result is 0);
 
 #if NET || NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-        var path = Alloc<char>(encoding.GetCharCount(buffer));
+        char[] path = Alloc<char>(encoding.GetCharCount(buffer));
         encoding.GetChars(buffer, path);
 #elif NETSTANDARD1_3_OR_GREATER || NET20_OR_GREATER || NETCOREAPP
-        var path = Alloc<char>(encoding.GetCharCount(buffer));
+        char[] path = Alloc<char>(encoding.GetCharCount(buffer));
         fixed (byte* sz = buffer)
         fixed (char* ptr = path)
             encoding.GetChars(sz, buffer.Length, ptr, path.Length);
 #else
-        var path = encoding.GetChars(buffer);
+        char[] path = encoding.GetChars(buffer);
 #endif
 
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_0_OR_GREATER

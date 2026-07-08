@@ -29,14 +29,14 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_load_assembly_and_get_function_pointer.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.LoadAssemblyAndGetFunctionPointer, out var handle);
+            GetRuntimeDelegate(DelegateType.LoadAssemblyAndGetFunctionPointer, out nint handle);
             _load_assembly_and_get_function_pointer = handle;
         }
         using var _1 = StringMarshal.Fixed(assemblyPath, out var assembly_path);
         using var _2 = StringMarshal.Fixed(typeName, out var type_name);
         using var _3 = StringMarshal.Fixed(methodName, out var method_name);
         using var _4 = StringMarshal.Fixed(delegateTypeName, out var delegate_type_name);
-        var result = _load_assembly_and_get_function_pointer.Invoke(assembly_path, type_name, method_name, delegate_type_name, null, out var ptr);
+        int result = _load_assembly_and_get_function_pointer.Invoke(assembly_path, type_name, method_name, delegate_type_name, null, out void* ptr);
         @delegate = (nint)ptr;
         return result;
     }
@@ -45,14 +45,14 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_get_function_pointer.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.GetFunctionPointer, out var handle);
+            GetRuntimeDelegate(DelegateType.GetFunctionPointer, out nint handle);
             _get_function_pointer = handle;
         }
 
         using var _1 = StringMarshal.Fixed(typeName, out var type_name);
         using var _2 = StringMarshal.Fixed(methodName, out var method_name);
         using var _3 = StringMarshal.Fixed(delegateTypeName, out var delegate_type_name);
-        var result = _get_function_pointer.Invoke(type_name, method_name, delegate_type_name, null, null, out var ptr);
+        int result = _get_function_pointer.Invoke(type_name, method_name, delegate_type_name, null, null, out void* ptr);
         @delegate = (nint)ptr;
         return result;
     }
@@ -61,7 +61,7 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_load_assembly.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.LoadAssembly, out var handle);
+            GetRuntimeDelegate(DelegateType.LoadAssembly, out nint handle);
             _load_assembly = handle;
         }
         using var _1 = StringMarshal.Fixed(assemblyPath, out var assembly_path);
@@ -72,7 +72,7 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_load_assembly_bytes.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out var handle);
+            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
         }
 
@@ -84,7 +84,7 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_load_assembly_bytes.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out var handle);
+            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
         }
 
@@ -96,7 +96,7 @@ public sealed class HostFXRHandle : IDisposable
     {
         if (_load_assembly_bytes.Value is 0)
         {
-            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out var handle);
+            GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
         }
 
