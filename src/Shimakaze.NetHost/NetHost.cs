@@ -71,7 +71,7 @@ public partial class NetHost
 
         byte[] buffer = Alloc<byte>((int)byteSize);
         result = GetHostFxrPath(buffer, ref buffer_size, 0);
-        Debug.Assert(result is 0);
+        Marshal.ThrowExceptionForHR(result);
 
 #if NET || NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
         char[] path = Alloc<char>(encoding.GetCharCount(buffer));
