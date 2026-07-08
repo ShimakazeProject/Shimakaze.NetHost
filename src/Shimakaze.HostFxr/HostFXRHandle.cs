@@ -28,7 +28,7 @@ public sealed class HostFXRHandle : IDisposable
 
     public unsafe void LoadAssemblyAndGetFunctionPointer(string assemblyPath, string typeName, string? methodName, string? delegateTypeName, out nint @delegate)
     {
-        if (_load_assembly_and_get_function_pointer.Value is 0)
+        if (_load_assembly_and_get_function_pointer.Value is null)
         {
             GetRuntimeDelegate(DelegateType.LoadAssemblyAndGetFunctionPointer, out nint handle);
             _load_assembly_and_get_function_pointer = handle;
@@ -40,13 +40,13 @@ public sealed class HostFXRHandle : IDisposable
         if (delegateTypeName is HostFXR.UNMANAGEDCALLERSONLY_METHOD)
             delegate_type_name = (char_t*)-1;
 
-        Marshal.ThrowExceptionForHR(_load_assembly_and_get_function_pointer.Invoke(assembly_path, type_name, method_name, delegate_type_name, null, out void* ptr));
+        Marshal.ThrowExceptionForHR(_load_assembly_and_get_function_pointer.Value(assembly_path, type_name, method_name, delegate_type_name, null, out void* ptr));
         @delegate = (nint)ptr;
     }
 
     public unsafe void GetFunctionPointer(string typeName, string? methodName, string? delegateTypeName, out nint @delegate)
     {
-        if (_get_function_pointer.Value is 0)
+        if (_get_function_pointer.Value is null)
         {
             GetRuntimeDelegate(DelegateType.GetFunctionPointer, out nint handle);
             _get_function_pointer = handle;
@@ -58,24 +58,24 @@ public sealed class HostFXRHandle : IDisposable
         if (delegateTypeName is HostFXR.UNMANAGEDCALLERSONLY_METHOD)
             delegate_type_name = (char_t*)-1;
 
-        Marshal.ThrowExceptionForHR(_get_function_pointer.Invoke(type_name, method_name, delegate_type_name, null, null, out void* ptr));
+        Marshal.ThrowExceptionForHR(_get_function_pointer.Value(type_name, method_name, delegate_type_name, null, null, out void* ptr));
         @delegate = (nint)ptr;
     }
 
     public unsafe void LoadAssembly(string assemblyPath)
     {
-        if (_load_assembly.Value is 0)
+        if (_load_assembly.Value is null)
         {
             GetRuntimeDelegate(DelegateType.LoadAssembly, out nint handle);
             _load_assembly = handle;
         }
         using var _1 = StringMarshal.Fixed(assemblyPath, out var assembly_path);
-        Marshal.ThrowExceptionForHR(_load_assembly.Invoke(assembly_path, null, null));
+        Marshal.ThrowExceptionForHR(_load_assembly.Value(assembly_path, null, null));
     }
 
     public unsafe void LoadAssemblyBytes(byte[] assemblyBytes, byte[]? symbolsBytes)
     {
-        if (_load_assembly_bytes.Value is 0)
+        if (_load_assembly_bytes.Value is null)
         {
             GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
@@ -83,23 +83,23 @@ public sealed class HostFXRHandle : IDisposable
 
         fixed (void* assembly_bytes = assemblyBytes)
         fixed (void* symbols_bytes = symbolsBytes)
-            Marshal.ThrowExceptionForHR(_load_assembly_bytes.Invoke(assembly_bytes, assemblyBytes.Length, symbols_bytes, symbolsBytes?.Length ?? 0, null, null));
+            Marshal.ThrowExceptionForHR(_load_assembly_bytes.Value(assembly_bytes, assemblyBytes.Length, symbols_bytes, symbolsBytes?.Length ?? 0, null, null));
     }
     public unsafe void LoadAssemblyBytes(void* assembly_bytes, int assembly_bytes_len, void* symbols_bytes, int symbols_bytes_len)
     {
-        if (_load_assembly_bytes.Value is 0)
+        if (_load_assembly_bytes.Value is null)
         {
             GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
         }
 
-        Marshal.ThrowExceptionForHR(_load_assembly_bytes.Invoke(assembly_bytes, assembly_bytes_len, symbols_bytes, symbols_bytes_len, null, null));
+        Marshal.ThrowExceptionForHR(_load_assembly_bytes.Value(assembly_bytes, assembly_bytes_len, symbols_bytes, symbols_bytes_len, null, null));
     }
 
 #if NET || NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_1_OR_GREATER
     public unsafe void LoadAssemblyBytes(ReadOnlySpan<byte> assemblyBytes, ReadOnlySpan<byte> symbolsBytes)
     {
-        if (_load_assembly_bytes.Value is 0)
+        if (_load_assembly_bytes.Value is null)
         {
             GetRuntimeDelegate(DelegateType.LoadAssemblyBytes, out nint handle);
             _load_assembly_bytes = handle;
@@ -107,7 +107,7 @@ public sealed class HostFXRHandle : IDisposable
 
         fixed (void* assembly_bytes = assemblyBytes)
         fixed (void* symbols_bytes = symbolsBytes)
-            Marshal.ThrowExceptionForHR(_load_assembly_bytes.Invoke(assembly_bytes, assemblyBytes.Length, symbols_bytes, symbolsBytes.Length, null, null));
+            Marshal.ThrowExceptionForHR(_load_assembly_bytes.Value(assembly_bytes, assemblyBytes.Length, symbols_bytes, symbolsBytes.Length, null, null));
     }
 #endif
 
