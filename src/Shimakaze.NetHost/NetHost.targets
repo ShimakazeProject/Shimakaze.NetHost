@@ -3,8 +3,9 @@
   <!--
     Resolve DynamicNetHostCopyToOutputDirectory
   -->
-  <PropertyGroup>
-    <DynamicNetHostCopyToOutputDirectory Condition="'$(DynamicNetHostCopyToOutputDirectory)' == ''">PreserveNewest</DynamicNetHostCopyToOutputDirectory>
+  <PropertyGroup Condition=" '$(DynamicNetHostCopyToOutputDirectory)' == '' ">
+    <DynamicNetHostCopyToOutputDirectory Condition=" '$(PublishAot)' != 'true' ">PreserveNewest</DynamicNetHostCopyToOutputDirectory>
+    <DynamicNetHostCopyToOutputDirectory Condition=" '$(DynamicNetHostCopyToOutputDirectory)' == '' ">Never</DynamicNetHostCopyToOutputDirectory>
   </PropertyGroup>
 
   <!--
